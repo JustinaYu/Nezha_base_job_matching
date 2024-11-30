@@ -3,6 +3,7 @@ A solution to the job matching competition in iFLYTEK based on the Nezha model.
 
 ## Job Matching
 https://challenge.xfyun.cn/topic/info?type=match-challenge-s3
+
 In this competition, the model is required to help filter out the resumes that best suit the job position. A large amount of encrypted and desensitized data of job JDs and job seekers' resumes as training samples. 
 
 We can regard the person-job matching task as a **text classification** task. Since the data was encrypted and desensitized, instead of using a pre-trained model, we *pre-trained* the model from scratch using this data and further *fine-tuned* it afterwards.
@@ -166,5 +167,7 @@ use train_dataset.pt.
 * loss function: focal loss / dice loss / label smoothing loss
 * optimizer: adamw / adam / adagrad
 
-* contrast learning ?
-* Model Distillation ？
+## Further possible optimization directions:
+
+* contrastive learning 
+* Model Distillation
