@@ -34,18 +34,48 @@ GPU source: Nivida A100-40G * 4 and Nivida A100-80G * 2
 │   └── vocab_wwm.txt               # the vocab-file for wwm task
 ├── fine_tuning
 │   ├── __init__.py
-│   ├── customize_model             
-│   ├── data                        
-│   ├── finetuning_model
-│   ├── io_new
-│   ├── losses
-│   ├── output
-│   ├── run_eval.py
-│   ├── run_fine_tuning.py
-│   ├── run_predict.py
-│   ├── run_train_1epoch.py
-│   ├── test_data.py
-│   └── train
+│   ├── customize_model             # The structures of these two custom models are detailed below            
+│   │   ├── NezhaBaseNetwork.py    
+│   │   ├── NezhaCapsnet.py
+│   │   └── __init__.py
+│   ├── data                        # train.json, cached_examples.pt, result of process_source_data.py shoule be here
+│   │   ├── check_source_data.py 
+│   │   ├── eval                    # store eval_dataset.pt
+│   │   ├── predict                 # store test.json, predict.csv, cached_examples.pt and result of process_source_data.py
+│   │   ├── train                   # store train_dataset.pt, result of run_train_1epoch.py
+│   │   ├── vocab_ngram.txt
+│   │   └── vocab_wwm.txt
+│   ├── finetuning_model
+│   │   ├── TSboard                        # for Tensorboard in the fine-tuning stage
+│   │   ├── checkpoint-capsule-nepoch      # ckpt for NezhaCapsnet
+│   │   ├── checkpoint-second-3epoch       # ckpt for NezhaBaseNetwork
+│   │   ├── checkpoints                    # to store ckpt if you run the run_fine_tuning.py
+│   │   ├── checkpoints-alpha              # ckpt for NezhaBaseNetwork after change the alpha value of focal loss(use the ckpt file in checkpoint-second-3epoch as the base)
+│   │   ├── ema-checkpoints                # ckpt for NezhaBaseNetwork when using ema
+│   │   └── nezha_config.json              # the config for model(NezhaCapsnet and NezhaBaseNetwork) in the fine-tuning stage
+│   ├── io_new
+│   │   ├── __init__.py            
+│   │   ├── fine_tuning_processor.py       # process the data to dataset for fine-tuning (train.json)
+│   │   ├── fine_tuning_tokenization.py    # tokenizer for fine-tuning
+│   │   ├── predict_processor.py           # process the data to dataset for prediction (test.json)
+│   │   └── process_source_data.py         # spilt source json into two json files, run before run the fine_tuning_processor.py (which is controlled in run_fine_tuning.py)
+│   ├── losses
+│   │   ├── DSCLoss.py                     # dice loss
+│   │   ├── FocalLoss.py                   # focal loss
+│   │   ├── LabelSmoothingLoss.py          # label smoothing loss
+│   │   └── __init__.py
+│   ├── output
+│   │   └── log                            # not use
+│   ├── run_eval.py                        # evaluate the 1000 samples randomly selected from the train.json
+│   ├── run_fine_tuning.py                 # fune-tuning using the samples in train.json (19000 samples), now has used ema.
+│   ├── run_predict.py                     # predict the 6000+ samples in the test.json
+│   ├── run_train_1epoch.py                # get the model predictions to the 19000 samples in the train.json
+│   ├── test_data.py                       # for test
+│   └── train    
+│       ├── __init__.py                    
+│       ├── fgm_fine_tuning_trainer.py    # trainer for fine-tuning using fgm and ema
+│       └── fine_tuning_trainer.py        # trainer for fine-tuning
+
 ├── io_new
 │   ├── LineByLineTextDataset.py
 │   ├── __init__.py
@@ -76,8 +106,11 @@ GPU source: Nivida A100-40G * 4 and Nivida A100-80G * 2
 ### pre-training
 We extracted all the resume data from train.json and test.json as a dataset and pre-trained them for the task of n-gram mask prediction. 
 
+
 ### fine-tuning
 We take 1000 samples from train.json as the validation set. Since the track is closed, we use the model's f1 score on the validation set as the improvement target.
+train.json -> resumeid_document.json + resumeid_positionid.json -> cached_examples.pt -> train_dataset.pt + eval_dataset.pt(commented out) -> dataloader
+test.json -> resumeid_document.json -> cached_examples.pt -> [ model prediction ] -> predict.csv
 
 
 ## Commands
@@ -89,6 +122,8 @@ We take 1000 samples from train.json as the validation set. Since the track is c
 
 ### Fine-tune the model:
 
+use train.json.
+
 ```PYTHONPATH=. accelerate launch fine_tuning/run_fine_tuning.py --do_train --do_accumulate --do_init```
 
 We have two model choices for fine-tuning: *NezhaBaseNetwork* and *NezhaCapsnet*. You can choose them in the run_*.py file. Their structure is as follows:
@@ -99,17 +134,23 @@ We have two model choices for fine-tuning: *NezhaBaseNetwork* and *NezhaCapsnet*
 
 ### Evaluate the performance of fine-tuned model:
 
+use eval_dataset.pt.
+
 ```PYTHONPATH=. accelerate launch fine_tuning/run_eval.py --do_load --do_eval```
 
 You can modify the ckpt file by modifying the parameters in the run_eval.py file.
 
 ### Predict the job positions corresponding to the resumes in test.json:
 
+use test.json.
+
 ```PYTHONPATH=. accelerate launch fine_tuning/run_predict.py --do_load --do_predict```
 
 the results will be stored in fine_tuning/data/predict/predict.csv.
 
 ### export the results of fine-tuned model in train.json：
+
+use train_dataset.pt.
 
 ```PYTHONPATH=. accelerate launch fine_tuning/run_train_1epoch.py --do_eval```
 
