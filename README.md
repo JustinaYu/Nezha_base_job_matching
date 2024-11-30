@@ -110,7 +110,9 @@ We extracted all the resume data from train.json and test.json as a dataset and 
 
 ### fine-tuning
 We take 1000 samples from train.json as the validation set. Since the track is closed, we use the model's f1 score on the validation set as the improvement target.
+
 train.json -> resumeid_document.json + resumeid_positionid.json -> cached_examples.pt -> train_dataset.pt + eval_dataset.pt(commented out) -> dataloader
+
 test.json -> resumeid_document.json -> cached_examples.pt -> [ model prediction ] -> predict.csv
 
 
