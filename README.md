@@ -104,11 +104,11 @@ GPU source: Nivida A100-40G * 4 and Nivida A100-80G * 2
 * train.json (20000 samples) : used in the pre-training and fine-tuning stages.
 * test.json (6000+ samples) : used in the pre-training and prediction stage.
 
-### pre-training
+### Pre-training
 We extracted all the resume data from train.json and test.json as a dataset and pre-trained them for the task of n-gram mask prediction. 
 
 
-### fine-tuning
+### Fine-tuning
 We take 1000 samples from train.json as the validation set. Since the track is closed, we use the model's f1 score on the validation set as the improvement target.
 
 train.json -> resumeid_document.json + resumeid_positionid.json -> cached_examples.pt -> train_dataset.pt + eval_dataset.pt(commented out) -> dataloader
@@ -151,7 +151,7 @@ use test.json.
 
 the results will be stored in fine_tuning/data/predict/predict.csv.
 
-### export the results of fine-tuned model in train.json：
+### Export the results of fine-tuned model in train.json：
 
 use train_dataset.pt.
 
